@@ -1,0 +1,64 @@
+# System files
+.DS_Store
+.Trash
+.Trashes
+.Spotlight-V100
+.fseventsd
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Development directories
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+.npm
+.yarn
+.pnp
+.pnp.js
+
+# Version control
+.git
+.gitignore
+.gitattributes
+.github
+.svn
+.hg
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+.project
+.classpath
+.settings
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build output
+dist
+build
+out
+target
+.next
+.nuxt
+.cache
+.parcel-cache
+
+# Docker specific
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Project specific
+.snapshots
+.codesight
+*.log
+

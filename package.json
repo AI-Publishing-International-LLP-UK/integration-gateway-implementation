@@ -1,0 +1,24 @@
+{
+  "name": "integration-gateway-implementation",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AI-Publishing-International-LLP-UK/integration-gateway-implementation.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AI-Publishing-International-LLP-UK/integration-gateway-implementation/issues"
+  },
+  "homepage": "https://github.com/AI-Publishing-International-LLP-UK/integration-gateway-implementation#readme",
+  "description": "",
+  "dependencies": {
+    "@google-cloud/firestore": "^7.11.1",
+    "firebase-admin": "^13.4.0"
+  }
+}

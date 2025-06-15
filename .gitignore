@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Service account credentials
+*-sa.json
+service-account.json
+service-accounts.json
+
+# Sample data
+sample-*.json
+dewey-cards-metadata.json
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# macOS specific
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Operating System Files
+Thumbs.db
+

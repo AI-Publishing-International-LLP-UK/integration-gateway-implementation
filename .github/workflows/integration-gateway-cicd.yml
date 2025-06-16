@@ -1,0 +1,155 @@
+name: Integration Gateway CI/CD/CT-T Pipeline
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'webhooks/**'
+      - 'utils/**'
+      - 'scripts/**'
+      - 'package*.json'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  REGION: us-west1
+  ZONE: us-west1-b
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Type check
+        run: npx tsc --noEmit
+        
+      - name: Run tests
+        run: npm test
+        
+      - name: Build TypeScript
+        run: npx tsc -p tsconfig.json
+
+  security-scan:
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run SAST scan
+        uses: github/codeql-action/analyze@v2
+        with:
+          languages: javascript
+          
+      - name: Dependency vulnerability scan
+        run: npm audit
+        
+      - name: Secret scanning
+        uses: gitleaks/gitleaks-action@v2
+        
+  deploy-dev:
+    needs: security-scan
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: development
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Google Cloud Auth
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          
+      - name: Setup Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          
+      - name: Deploy to Cloud Functions
+        run: |
+          gcloud functions deploy squadron-04-rix-webhook \
+            --gen2 \
+            --region=${{ env.REGION }} \
+            --runtime=nodejs20 \
+            --source=. \
+            --entry-point=handleRixWebhook \
+            --trigger-http \
+            --min-instances=1 \
+            --memory=256Mi \
+            --timeout=60s \
+            --set-secrets=RIX_CONFIG=squadron-04-rix-config:latest \
+            --set-env-vars=GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }}
+            
+      - name: Run Integration Tests
+        run: npm run test:integration
+        env:
+          WEBHOOK_URL: ${{ steps.deploy.outputs.url }}
+          
+  continuous-training:
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute Training Pipeline
+        run: |
+          echo \"Training metrics collection started\"
+          # Add your training pipeline commands here
+          
+      - name: Update Model Metrics
+        run: |
+          echo \"Updating model performance metrics\"
+          # Add your metric update commands here
+          
+  deploy-prod:
+    needs: [deploy-dev, continuous-training]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Google Cloud Auth
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          
+      - name: Setup Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          
+      - name: Deploy to Production
+        run: |
+          gcloud functions deploy squadron-04-rix-webhook-prod \
+            --gen2 \
+            --region=${{ env.REGION }} \
+            --runtime=nodejs20 \
+            --source=. \
+            --entry-point=handleRixWebhook \
+            --trigger-http \
+            --min-instances=2 \
+            --memory=512Mi \
+            --timeout=60s \
+            --set-secrets=RIX_CONFIG=squadron-04-rix-config:latest \
+            --set-env-vars=GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }}
+
+      - name: Verify Production Deployment
+        run: |
+          DEPLOY_CHECK=$(gcloud functions describe squadron-04-rix-webhook-prod --region=${{ env.REGION }} --format='get(state)')
+          if [ \"$DEPLOY_CHECK\" != \"ACTIVE\" ]; then
+            echo \"Production deployment failed\"
+            exit 1
+          fi"
+
